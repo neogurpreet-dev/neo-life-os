@@ -1,9 +1,5 @@
-import Hero from '@/components/sections/Hero'
+import ClientBody from '@/components/ClientBody'
 
 export default function Home() {
-  return (
-    <main>
-      <Hero />
-    </main>
-  )
+  return <ClientBody />
 }

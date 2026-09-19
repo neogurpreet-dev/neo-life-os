@@ -3,7 +3,7 @@ import './globals.css'
 
 export const metadata: Metadata = {
   title: 'NeoGurpreet — Life OS',
-  description: 'Personal productivity OS — NeoGurpreet · IIT Roorkee',
+  description: 'Personal productivity OS · IIT Roorkee',
 }
 
 export default function RootLayout({
