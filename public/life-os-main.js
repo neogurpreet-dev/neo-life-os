@@ -1,72 +1,202 @@
 /* ═══════════════════════════════════════════════════════════
-   NEO LIFE OS — CLOUD SYNC LAYER
-   Runs before all IIFEs. On first load per session:
-   1. Hides body to prevent stale-data flash
-   2. Fetches all cloud data into localStorage
-   3. Reloads so IIFEs init with fresh data
-   Every localStorage write is mirrored to Supabase in the background.
+   NEO LIFE OS — AUTH + CLOUD SYNC LAYER
+   1. Check for a valid Supabase JWT (refresh if near-expiry)
+   2. If none → show login overlay, halt
+   3. First load per session: bulk-pull cloud → localStorage → reload
+   4. Every localStorage write is mirrored to Supabase in the background
 ═══════════════════════════════════════════════════════════ */
 (function () {
   'use strict';
 
+  /* ── Config ── */
   var SYNC_KEYS = [
     'kanban_tasks_v2','pomo_queue_v1','pomo_log_v2',
     'eng_vocab_v1','eng_reading_v1','eng_practice_v1',
     'fit_log_v1','fit_skills_v1','fit_nutrition_v2','fit_skill_trees_v1',
     'habits_v1','lifeos_reminders','wt_data_v1','wt_last_reset_v1'
   ];
-
   var SYNC_KEY_SET = {};
   for (var i = 0; i < SYNC_KEYS.length; i++) SYNC_KEY_SET[SYNC_KEYS[i]] = true;
 
-  /* ── 1. Intercept writes → background POST to /api/sync ── */
+  var AUTH_KEY    = 'neo_auth_v1';
+  var SESSION_FLAG = 'neo_cloud_synced_v1';
+
+  /* ── Token storage ── */
+  function loadAuth() {
+    try { return JSON.parse(localStorage.getItem(AUTH_KEY)) || null; } catch (e) { return null; }
+  }
+  function saveAuth(data) {
+    try {
+      localStorage.setItem(AUTH_KEY, JSON.stringify({
+        access_token:  data.access_token,
+        refresh_token: data.refresh_token,
+        expires_at:    Date.now() + (data.expires_in || 3600) * 1000
+      }));
+    } catch (e) {}
+  }
+  function clearAuth() { try { localStorage.removeItem(AUTH_KEY); } catch (e) {} }
+
+  function getAccessToken() {
+    var a = loadAuth();
+    if (!a || !a.access_token) return null;
+    if (Date.now() > a.expires_at - 60000) return null; // expired or < 1 min left
+    return a.access_token;
+  }
+
+  function authHeaders(token) {
+    return { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token };
+  }
+
+  /* ── Token refresh ── */
+  function refreshToken() {
+    var a = loadAuth();
+    if (!a || !a.refresh_token) return Promise.resolve(null);
+    return fetch('/api/auth/refresh', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ refresh_token: a.refresh_token })
+    }).then(function (r) {
+      if (!r.ok) { clearAuth(); return null; }
+      return r.json().then(function (data) {
+        saveAuth(data);
+        return data.access_token || null;
+      });
+    }).catch(function () { return null; });
+  }
+
+  function getValidToken() {
+    var t = getAccessToken();
+    if (t) return Promise.resolve(t);
+    return refreshToken();
+  }
+
+  /* ── Login via API route ── */
+  function doLogin(email, password) {
+    return fetch('/api/auth/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: email, password: password })
+    }).then(function (r) {
+      return r.json().then(function (data) {
+        if (!r.ok) throw new Error(data.error || 'Login failed');
+        saveAuth(data);
+        return data.access_token;
+      });
+    });
+  }
+
+  /* ── Intercept localStorage writes → background POST to /api/sync ── */
   var _origSet = Storage.prototype.setItem;
   Storage.prototype.setItem = function (key, value) {
     _origSet.call(this, key, value);
     if (this === localStorage && SYNC_KEY_SET[key]) {
+      var token = getAccessToken();
+      if (!token) return;
       var parsed;
       try { parsed = JSON.parse(value); } catch (e) { parsed = value; }
       fetch('/api/sync', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: authHeaders(token),
         body: JSON.stringify({ key: key, value: parsed })
       }).catch(function () {});
     }
   };
 
-  /* ── 2. On first load per session: pull cloud → localStorage → reload ── */
-  var SESSION_FLAG = 'neo_cloud_synced_v1';
-  if (sessionStorage.getItem(SESSION_FLAG)) return;
+  /* ── Login UI ── */
+  function showLogin(errMsg) {
+    document.documentElement.style.opacity = '';
+    var overlay = document.getElementById('neo-login-overlay');
+    if (!overlay) return;
+    overlay.style.display = 'flex';
+    if (errMsg) {
+      var errEl = document.getElementById('neo-login-err');
+      if (errEl) { errEl.textContent = errMsg; errEl.style.display = 'block'; }
+    }
 
-  document.documentElement.style.opacity = '0';
+    var btn    = document.getElementById('neo-login-btn');
+    var emailEl = document.getElementById('neo-login-email');
+    var passEl  = document.getElementById('neo-login-pass');
+    if (!btn || !emailEl || !passEl) return;
 
-  fetch('/api/sync/bulk', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ keys: SYNC_KEYS })
-  })
-    .then(function (r) { return r.json(); })
-    .then(function (data) {
-      var items = data.items || [];
-      var updated = false;
-      for (var j = 0; j < items.length; j++) {
-        var item = items[j];
-        if (item.value !== null) {
-          var newVal = typeof item.value === 'string' ? item.value : JSON.stringify(item.value);
-          if (localStorage.getItem(item.key) !== newVal) {
-            _origSet.call(localStorage, item.key, newVal);
-            updated = true;
+    function attemptLogin() {
+      var errEl = document.getElementById('neo-login-err');
+      btn.textContent = 'Signing in…';
+      btn.disabled = true;
+      if (errEl) errEl.style.display = 'none';
+      doLogin(emailEl.value.trim(), passEl.value)
+        .then(function () {
+          overlay.style.display = 'none';
+          sessionStorage.removeItem(SESSION_FLAG);
+          bootSync();
+        })
+        .catch(function (e) {
+          btn.textContent = 'Sign In';
+          btn.disabled = false;
+          if (errEl) { errEl.textContent = e.message; errEl.style.display = 'block'; }
+        });
+    }
+
+    btn.onclick = attemptLogin;
+    passEl.onkeydown = function (e) { if (e.key === 'Enter') attemptLogin(); };
+  }
+
+  /* ── Boot sync ── */
+  function bootSync() {
+    getValidToken().then(function (token) {
+      if (!token) { showLogin(); return; }
+      if (sessionStorage.getItem(SESSION_FLAG)) return;
+
+      document.documentElement.style.opacity = '0';
+
+      fetch('/api/sync/bulk', {
+        method: 'POST',
+        headers: authHeaders(token),
+        body: JSON.stringify({ keys: SYNC_KEYS })
+      })
+        .then(function (r) {
+          if (r.status === 401) {
+            clearAuth();
+            showLogin('Session expired — please sign in again.');
+            return;
           }
-        }
-      }
-      sessionStorage.setItem(SESSION_FLAG, '1');
-      if (updated) { window.location.reload(); }
-      else { document.documentElement.style.opacity = ''; }
-    })
-    .catch(function () {
-      sessionStorage.setItem(SESSION_FLAG, '1');
-      document.documentElement.style.opacity = '';
+          return r.json().then(function (data) {
+            var items = data.items || [];
+            var updated = false;
+            for (var j = 0; j < items.length; j++) {
+              var item = items[j];
+              if (item.value !== null) {
+                var newVal = typeof item.value === 'string' ? item.value : JSON.stringify(item.value);
+                if (localStorage.getItem(item.key) !== newVal) {
+                  _origSet.call(localStorage, item.key, newVal);
+                  updated = true;
+                }
+              }
+            }
+            sessionStorage.setItem(SESSION_FLAG, '1');
+            if (updated) { window.location.reload(); }
+            else { document.documentElement.style.opacity = ''; }
+          });
+        })
+        .catch(function () {
+          sessionStorage.setItem(SESSION_FLAG, '1');
+          document.documentElement.style.opacity = '';
+        });
     });
+  }
+
+  /* ── Expose logout globally ── */
+  window.neoLogout = function () {
+    clearAuth();
+    sessionStorage.removeItem(SESSION_FLAG);
+    window.location.reload();
+  };
+
+  /* ── Start ── */
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', bootSync);
+  } else {
+    bootSync();
+  }
 })();
 
 

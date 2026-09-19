@@ -1825,9 +1825,80 @@ body::before {
     backdrop-filter: blur(8px) !important;
   }
 }
+
+/* ── Login overlay ── */
+#neo-login-overlay {
+  position: fixed; inset: 0; z-index: 9999;
+  background: rgba(6,7,14,.96);
+  display: none;
+  align-items: center; justify-content: center;
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+}
+.neo-login-card {
+  background: rgba(255,255,255,.045);
+  border: 1px solid rgba(255,255,255,.09);
+  border-radius: 16px;
+  padding: 40px 36px 32px;
+  width: 100%; max-width: 360px;
+  display: flex; flex-direction: column; gap: 14px;
+}
+.neo-login-logo {
+  font-size: 2rem; text-align: center; color: #3B82F6;
+  margin-bottom: 4px;
+}
+.neo-login-title {
+  font-family: 'Inter', sans-serif; font-weight: 700;
+  font-size: 1.4rem; color: #fff;
+  text-align: center; margin: 0;
+}
+.neo-login-sub {
+  font-size: .75rem; color: rgba(255,255,255,.4);
+  text-align: center; margin: 0 0 6px;
+}
+.neo-login-input {
+  background: rgba(255,255,255,.06);
+  border: 1px solid rgba(255,255,255,.09);
+  border-radius: 8px; padding: 10px 14px;
+  color: #fff; font-size: .9rem; font-family: 'Inter', sans-serif;
+  outline: none; width: 100%; box-sizing: border-box;
+  transition: border-color .2s;
+}
+.neo-login-input:focus { border-color: #3B82F6; }
+.neo-login-input::placeholder { color: rgba(255,255,255,.3); }
+.neo-login-btn {
+  background: #3B82F6; color: #fff;
+  border: none; border-radius: 8px;
+  padding: 11px; font-size: .9rem; font-weight: 600;
+  font-family: 'Inter', sans-serif;
+  cursor: pointer; margin-top: 4px;
+  transition: background .2s, opacity .2s;
+}
+.neo-login-btn:hover:not(:disabled) { background: #2563EB; }
+.neo-login-btn:disabled { opacity: .5; cursor: not-allowed; }
+.neo-login-err {
+  background: rgba(239,68,68,.15);
+  border: 1px solid rgba(239,68,68,.3);
+  border-radius: 6px; padding: 8px 12px;
+  color: #FCA5A5; font-size: .8rem;
+  display: none;
+}
 `;
 
-const BODY_HTML = `<!-- HERO -->
+const BODY_HTML = `<!-- LOGIN OVERLAY -->
+<div id="neo-login-overlay">
+  <div class="neo-login-card">
+    <div class="neo-login-logo">⬡</div>
+    <h1 class="neo-login-title">Life OS</h1>
+    <p class="neo-login-sub">NeoGurpreet &nbsp;·&nbsp; IIT Roorkee</p>
+    <div id="neo-login-err" class="neo-login-err"></div>
+    <input id="neo-login-email" class="neo-login-input" type="email" placeholder="Email" autocomplete="email" />
+    <input id="neo-login-pass" class="neo-login-input" type="password" placeholder="Password" autocomplete="current-password" />
+    <button id="neo-login-btn" class="neo-login-btn">Sign In</button>
+  </div>
+</div>
+
+<!-- HERO -->
 <section class="hero">
   <div class="hero-eyebrow">Life Operating System · IIT Roorkee · Sem 1 · 2026</div>
   <h1 class="hero-name">NeoGurpreet</h1>
