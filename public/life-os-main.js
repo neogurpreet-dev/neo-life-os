@@ -1,9 +1,9 @@
 /* ═══════════════════════════════════════════════════════════
-   NEO LIFE OS — AUTH + CLOUD SYNC LAYER
-   1. Check for a valid Supabase JWT (refresh if near-expiry)
-   2. If none → show login overlay, halt
-   3. First load per session: bulk-pull cloud → localStorage → reload
-   4. Every localStorage write is mirrored to Supabase in the background
+   NEO LIFE OS — AUTH + CLOUD SYNC LAYER  v2
+   · Sign-in / Sign-up / Email OTP verification
+   · Per-user JWT → Supabase RLS
+   · Profile: display name, institution, batch, avatar, accent
+   · Every localStorage write mirrored to Supabase in background
 ═══════════════════════════════════════════════════════════ */
 (function () {
   'use strict';
@@ -13,13 +13,17 @@
     'kanban_tasks_v2','pomo_queue_v1','pomo_log_v2',
     'eng_vocab_v1','eng_reading_v1','eng_practice_v1',
     'fit_log_v1','fit_skills_v1','fit_nutrition_v2','fit_skill_trees_v1',
-    'habits_v1','lifeos_reminders','wt_data_v1','wt_last_reset_v1'
+    'habits_v1','lifeos_reminders','wt_data_v1','wt_last_reset_v1',
+    'user_profile_v1'
   ];
   var SYNC_KEY_SET = {};
   for (var i = 0; i < SYNC_KEYS.length; i++) SYNC_KEY_SET[SYNC_KEYS[i]] = true;
 
-  var AUTH_KEY    = 'neo_auth_v1';
+  var AUTH_KEY     = 'neo_auth_v1';
   var SESSION_FLAG = 'neo_cloud_synced_v1';
+  var PROFILE_KEY  = 'user_profile_v1';
+  var _pendingEmail = '';
+  var _pendingName  = '';
 
   /* ── Token storage ── */
   function loadAuth() {
@@ -47,6 +51,15 @@
     return { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token };
   }
 
+  function getAuthEmail() {
+    var a = loadAuth();
+    if (!a || !a.access_token) return '';
+    try {
+      var payload = JSON.parse(atob(a.access_token.split('.')[1]));
+      return payload.email || '';
+    } catch (e) { return ''; }
+  }
+
   /* ── Token refresh ── */
   function refreshToken() {
     var a = loadAuth();
@@ -57,10 +70,7 @@
       body: JSON.stringify({ refresh_token: a.refresh_token })
     }).then(function (r) {
       if (!r.ok) { clearAuth(); return null; }
-      return r.json().then(function (data) {
-        saveAuth(data);
-        return data.access_token || null;
-      });
+      return r.json().then(function (data) { saveAuth(data); return data.access_token || null; });
     }).catch(function () { return null; });
   }
 
@@ -70,7 +80,7 @@
     return refreshToken();
   }
 
-  /* ── Login via API route ── */
+  /* ── Auth API calls ── */
   function doLogin(email, password) {
     return fetch('/api/auth/login', {
       method: 'POST',
@@ -83,6 +93,40 @@
         return data.access_token;
       });
     });
+  }
+
+  function doSignup(name, email, password) {
+    return fetch('/api/auth/signup', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ display_name: name, email: email, password: password })
+    }).then(function (r) {
+      return r.json().then(function (data) {
+        if (!r.ok) throw new Error(data.error || 'Sign-up failed');
+        return data;
+      });
+    });
+  }
+
+  function doVerifyOtp(email, token) {
+    return fetch('/api/auth/verify-otp', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: email, token: token, type: 'signup' })
+    }).then(function (r) {
+      return r.json().then(function (data) {
+        if (!r.ok) throw new Error(data.error || 'Verification failed');
+        return data;
+      });
+    });
+  }
+
+  function doResendOtp(email) {
+    return fetch('/api/auth/signup', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: email, resend: true })
+    }).then(function (r) { return r.json(); }).catch(function () {});
   }
 
   /* ── Intercept localStorage writes → background POST to /api/sync ── */
@@ -102,48 +146,271 @@
     }
   };
 
-  /* ── Login UI ── */
+  /* ── Profile helpers ── */
+  function loadProfile() {
+    try { return JSON.parse(localStorage.getItem(PROFILE_KEY)) || {}; } catch (e) { return {}; }
+  }
+
+  function applyProfile() {
+    var p = loadProfile();
+
+    // Accent color CSS variable
+    if (p.themeColor && /^#[0-9a-fA-F]{6}$/.test(p.themeColor)) {
+      document.documentElement.style.setProperty('--accent', p.themeColor);
+    }
+
+    // Hero name
+    var heroName = document.getElementById('neo-hero-name');
+    if (heroName && p.displayName) heroName.textContent = p.displayName;
+
+    // Hero sub
+    var heroSub = document.getElementById('neo-hero-sub');
+    if (heroSub && (p.institution || p.batch)) {
+      var parts = [];
+      if (p.institution) parts.push(p.institution);
+      if (p.batch) parts.push(p.batch);
+      heroSub.innerHTML = parts.join(' &nbsp;&middot;&nbsp; ');
+    }
+
+    // Hero eyebrow
+    var heroEb = document.getElementById('neo-hero-eyebrow');
+    if (heroEb && p.institution) {
+      heroEb.textContent = 'Life Operating System · ' + p.institution + (p.batch ? ' · ' + p.batch : '');
+    }
+
+    // Profile button initials / avatar
+    _refreshProfileBtn(p);
+  }
+
+  function _refreshProfileBtn(p) {
+    var btn = document.getElementById('neo-profile-btn');
+    if (!btn) return;
+    var initial = (p && p.displayName ? p.displayName[0] : 'U').toUpperCase();
+    if (p && p.avatarUrl) {
+      btn.innerHTML = '<img src="' + p.avatarUrl + '" alt="avatar" onerror="this.parentNode.innerHTML=\'' + initial + '\'">';
+    } else {
+      btn.textContent = initial;
+    }
+    // Large avatar in profile panel
+    var avLg = document.getElementById('neo-profile-avatar-lg');
+    if (!avLg) return;
+    if (p && p.avatarUrl) {
+      avLg.innerHTML = '<img src="' + p.avatarUrl + '" style="width:100%;height:100%;object-fit:cover;border-radius:50%" onerror="this.parentNode.textContent=\'' + initial + '\'">';
+    } else {
+      avLg.textContent = initial;
+      avLg.style.backgroundImage = '';
+    }
+  }
+
+  /* ── View helpers ── */
+  function showView(id) {
+    var views = ['neo-view-signin', 'neo-view-signup', 'neo-view-verify'];
+    for (var v = 0; v < views.length; v++) {
+      var el = document.getElementById(views[v]);
+      if (el) el.style.display = (views[v] === id) ? 'flex' : 'none';
+    }
+  }
+
+  function setErr(errId, msg) {
+    var el = document.getElementById(errId);
+    if (!el) return;
+    if (msg) { el.textContent = msg; el.style.display = 'block'; }
+    else { el.style.display = 'none'; }
+  }
+
+  /* ── Login / Sign-up UI ── */
   function showLogin(errMsg) {
     document.documentElement.style.opacity = '';
     var overlay = document.getElementById('neo-login-overlay');
     if (!overlay) return;
     overlay.style.display = 'flex';
-    if (errMsg) {
-      var errEl = document.getElementById('neo-login-err');
-      if (errEl) { errEl.textContent = errMsg; errEl.style.display = 'block'; }
-    }
+    showView('neo-view-signin');
+    if (errMsg) setErr('neo-signin-err', errMsg);
 
-    var btn    = document.getElementById('neo-login-btn');
-    var emailEl = document.getElementById('neo-login-email');
-    var passEl  = document.getElementById('neo-login-pass');
-    if (!btn || !emailEl || !passEl) return;
+    /* ─ Sign In ─ */
+    var signinBtn   = document.getElementById('neo-signin-btn');
+    var signinEmail = document.getElementById('neo-signin-email');
+    var signinPass  = document.getElementById('neo-signin-pass');
+    var goSignup    = document.getElementById('neo-go-signup');
 
-    function attemptLogin() {
-      var errEl = document.getElementById('neo-login-err');
-      btn.textContent = 'Signing in…';
-      btn.disabled = true;
-      if (errEl) errEl.style.display = 'none';
-      doLogin(emailEl.value.trim(), passEl.value)
+    function attemptSignin() {
+      setErr('neo-signin-err', '');
+      if (!signinEmail.value.trim() || !signinPass.value) {
+        setErr('neo-signin-err', 'Enter your email and password'); return;
+      }
+      signinBtn.textContent = 'Signing in…'; signinBtn.disabled = true;
+      doLogin(signinEmail.value.trim(), signinPass.value)
         .then(function () {
           overlay.style.display = 'none';
           sessionStorage.removeItem(SESSION_FLAG);
           bootSync();
         })
         .catch(function (e) {
-          btn.textContent = 'Sign In';
-          btn.disabled = false;
-          if (errEl) { errEl.textContent = e.message; errEl.style.display = 'block'; }
+          signinBtn.textContent = 'Sign In'; signinBtn.disabled = false;
+          setErr('neo-signin-err', e.message);
         });
     }
 
-    btn.onclick = attemptLogin;
-    passEl.onkeydown = function (e) { if (e.key === 'Enter') attemptLogin(); };
+    if (signinBtn)   signinBtn.onclick = attemptSignin;
+    if (signinPass)  signinPass.onkeydown = function (e) { if (e.key === 'Enter') attemptSignin(); };
+    if (goSignup)    goSignup.onclick = function () { setErr('neo-signup-err', ''); showView('neo-view-signup'); };
+
+    /* ─ Sign Up ─ */
+    var signupBtn   = document.getElementById('neo-signup-btn');
+    var signupName  = document.getElementById('neo-signup-name');
+    var signupEmail = document.getElementById('neo-signup-email');
+    var signupPass  = document.getElementById('neo-signup-pass');
+    var signupPass2 = document.getElementById('neo-signup-pass2');
+    var goSignin    = document.getElementById('neo-go-signin');
+
+    function attemptSignup() {
+      setErr('neo-signup-err', '');
+      var name  = signupName  ? signupName.value.trim()  : '';
+      var email = signupEmail ? signupEmail.value.trim() : '';
+      var pass  = signupPass  ? signupPass.value         : '';
+      var pass2 = signupPass2 ? signupPass2.value        : '';
+      if (!name)            { setErr('neo-signup-err', 'Display name is required'); return; }
+      if (!email)           { setErr('neo-signup-err', 'Email is required'); return; }
+      if (pass.length < 8)  { setErr('neo-signup-err', 'Password must be at least 8 characters'); return; }
+      if (pass !== pass2)   { setErr('neo-signup-err', 'Passwords do not match'); return; }
+      signupBtn.textContent = 'Creating account…'; signupBtn.disabled = true;
+      _pendingEmail = email;
+      _pendingName  = name;
+      doSignup(name, email, pass)
+        .then(function (data) {
+          signupBtn.textContent = 'Create Account'; signupBtn.disabled = false;
+          if (data.confirmed) {
+            saveAuth(data);
+            _origSet.call(localStorage, PROFILE_KEY, JSON.stringify({ displayName: name }));
+            overlay.style.display = 'none';
+            sessionStorage.removeItem(SESSION_FLAG);
+            bootSync();
+          } else {
+            var sub = document.getElementById('neo-verify-sub');
+            if (sub) sub.textContent = 'We sent a 6-digit code to ' + email;
+            setErr('neo-verify-err', '');
+            showView('neo-view-verify');
+          }
+        })
+        .catch(function (e) {
+          signupBtn.textContent = 'Create Account'; signupBtn.disabled = false;
+          setErr('neo-signup-err', e.message);
+        });
+    }
+
+    if (signupBtn) signupBtn.onclick = attemptSignup;
+    if (goSignin)  goSignin.onclick  = function () { setErr('neo-signin-err', ''); showView('neo-view-signin'); };
+
+    /* ─ Verify OTP ─ */
+    var verifyBtn  = document.getElementById('neo-verify-btn');
+    var verifyCode = document.getElementById('neo-verify-code');
+    var resendBtn  = document.getElementById('neo-resend-btn');
+
+    function attemptVerify() {
+      setErr('neo-verify-err', '');
+      var code = verifyCode ? verifyCode.value.replace(/\D/g, '') : '';
+      if (code.length !== 6) { setErr('neo-verify-err', 'Enter the full 6-digit code'); return; }
+      verifyBtn.textContent = 'Verifying…'; verifyBtn.disabled = true;
+      doVerifyOtp(_pendingEmail, code)
+        .then(function (data) {
+          saveAuth(data);
+          // Seed initial profile with display name (sync will push it to Supabase)
+          if (_pendingName) {
+            _origSet.call(localStorage, PROFILE_KEY, JSON.stringify({ displayName: _pendingName }));
+          }
+          overlay.style.display = 'none';
+          sessionStorage.removeItem(SESSION_FLAG);
+          bootSync();
+        })
+        .catch(function (e) {
+          verifyBtn.textContent = 'Verify Email'; verifyBtn.disabled = false;
+          setErr('neo-verify-err', e.message);
+        });
+    }
+
+    if (verifyBtn)  verifyBtn.onclick = attemptVerify;
+    if (verifyCode) verifyCode.onkeydown = function (e) { if (e.key === 'Enter') attemptVerify(); };
+    if (resendBtn)  resendBtn.onclick = function () {
+      resendBtn.textContent = 'Sending…'; resendBtn.disabled = true;
+      doResendOtp(_pendingEmail).then(function () {
+        resendBtn.textContent = 'Sent ✓';
+        setTimeout(function () { resendBtn.textContent = 'Resend code'; resendBtn.disabled = false; }, 3000);
+      });
+    };
+
+    // Auto-focus first field
+    if (signinEmail) setTimeout(function () { signinEmail.focus(); }, 50);
+  }
+
+  /* ── Profile overlay ── */
+  function wireProfile() {
+    var profileBtn     = document.getElementById('neo-profile-btn');
+    var profileOverlay = document.getElementById('neo-profile-overlay');
+    var profileClose   = document.getElementById('neo-profile-close');
+    var profileSave    = document.getElementById('neo-profile-save');
+    var profileLogout  = document.getElementById('neo-profile-logout-btn');
+
+    if (profileBtn && !profileBtn._wired) {
+      profileBtn._wired = true;
+      profileBtn.onclick = function () { fillProfileForm(); if (profileOverlay) profileOverlay.style.display = 'flex'; };
+    }
+    if (profileClose && !profileClose._wired) {
+      profileClose._wired = true;
+      profileClose.onclick = function () { if (profileOverlay) profileOverlay.style.display = 'none'; };
+    }
+    if (profileOverlay) {
+      profileOverlay.onclick = function (e) { if (e.target === profileOverlay) profileOverlay.style.display = 'none'; };
+    }
+    if (profileSave && !profileSave._wired) {
+      profileSave._wired = true;
+      profileSave.onclick = function () {
+        var g = function (id) { var el = document.getElementById(id); return el ? el.value : ''; };
+        var profile = {
+          displayName:  g('neo-pf-name'),
+          institution:  g('neo-pf-institution'),
+          batch:        g('neo-pf-batch'),
+          avatarUrl:    g('neo-pf-avatar'),
+          themeColor:   g('neo-pf-color') || '#3B82F6'
+        };
+        localStorage.setItem(PROFILE_KEY, JSON.stringify(profile)); // triggers sync interceptor
+        applyProfile();
+        if (profileOverlay) profileOverlay.style.display = 'none';
+        var orig = profileSave.textContent;
+        profileSave.textContent = 'Saved ✓';
+        setTimeout(function () { profileSave.textContent = orig; }, 1500);
+      };
+    }
+    if (profileLogout && !profileLogout._wired) {
+      profileLogout._wired = true;
+      profileLogout.onclick = function () { window.neoLogout(); };
+    }
+  }
+
+  function fillProfileForm() {
+    var p     = loadProfile();
+    var email = getAuthEmail();
+    var g = function (id, val) { var el = document.getElementById(id); if (el) el.value = val || ''; };
+    g('neo-pf-name',        p.displayName || '');
+    g('neo-pf-institution', p.institution || '');
+    g('neo-pf-batch',       p.batch || '');
+    g('neo-pf-avatar',      p.avatarUrl || '');
+    g('neo-pf-color',       p.themeColor || '#3B82F6');
+    var nd = document.getElementById('neo-profile-name-display');
+    var ed = document.getElementById('neo-profile-email-display');
+    if (nd) nd.textContent = p.displayName || 'User';
+    if (ed) ed.textContent = email;
+    _refreshProfileBtn(p);
   }
 
   /* ── Boot sync ── */
   function bootSync() {
     getValidToken().then(function (token) {
       if (!token) { showLogin(); return; }
+
+      // Apply profile & wire UI immediately (pre-sync)
+      applyProfile();
+      wireProfile();
+
       if (sessionStorage.getItem(SESSION_FLAG)) return;
 
       document.documentElement.style.opacity = '0';
@@ -160,7 +427,7 @@
             return;
           }
           return r.json().then(function (data) {
-            var items = data.items || [];
+            var items   = data.items || [];
             var updated = false;
             for (var j = 0; j < items.length; j++) {
               var item = items[j];
@@ -173,22 +440,32 @@
               }
             }
             sessionStorage.setItem(SESSION_FLAG, '1');
-            if (updated) { window.location.reload(); }
-            else { document.documentElement.style.opacity = ''; }
+            if (updated) {
+              window.location.reload();
+            } else {
+              document.documentElement.style.opacity = '';
+              applyProfile();
+            }
           });
         })
         .catch(function () {
           sessionStorage.setItem(SESSION_FLAG, '1');
           document.documentElement.style.opacity = '';
+          applyProfile();
         });
     });
   }
 
-  /* ── Expose logout globally ── */
+  /* ── Expose globals ── */
   window.neoLogout = function () {
     clearAuth();
     sessionStorage.removeItem(SESSION_FLAG);
     window.location.reload();
+  };
+
+  window.neoShowProfile = function () {
+    var overlay = document.getElementById('neo-profile-overlay');
+    if (overlay) { fillProfileForm(); overlay.style.display = 'flex'; }
   };
 
   /* ── Start ── */
@@ -198,7 +475,6 @@
     bootSync();
   }
 })();
-
 
 /* ─── CONSTANTS ─── */
 const SUBJ = {

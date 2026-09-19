@@ -1883,26 +1883,222 @@ body::before {
   color: #FCA5A5; font-size: .8rem;
   display: none;
 }
+/* ── Auth view switch ── */
+.neo-login-switch {
+  text-align: center; font-size: .8rem;
+  color: rgba(255,255,255,.35); margin-top: -2px;
+}
+.neo-login-switch button {
+  background: none; border: none; color: #3B82F6;
+  cursor: pointer; font-size: .8rem;
+  font-family: 'Inter', sans-serif;
+  padding: 0; text-decoration: underline;
+}
+.neo-otp-input {
+  text-align: center; letter-spacing: .5em;
+  font-size: 1.25rem; font-family: 'JetBrains Mono', monospace;
+}
+/* ── Profile button (fixed, top-right) ── */
+#neo-profile-btn {
+  position: fixed; top: 16px; right: 16px; z-index: 9000;
+  width: 38px; height: 38px; border-radius: 50%;
+  background: rgba(59,130,246,.15);
+  border: 1.5px solid rgba(59,130,246,.35);
+  color: #fff; font-size: .85rem; font-weight: 700;
+  cursor: pointer; display: flex; align-items: center; justify-content: center;
+  font-family: 'Inter', sans-serif; overflow: hidden;
+  transition: background .2s, transform .15s;
+}
+#neo-profile-btn:hover { background: rgba(59,130,246,.35); transform: scale(1.06); }
+#neo-profile-btn img { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; }
+/* ── Profile overlay (slide-in from right) ── */
+#neo-profile-overlay {
+  position: fixed; inset: 0; z-index: 9998;
+  background: rgba(6,7,14,.7);
+  display: none; align-items: stretch; justify-content: flex-end;
+  backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
+}
+.neo-profile-card {
+  background: #0d0f1a;
+  border-left: 1px solid rgba(255,255,255,.08);
+  width: 100%; max-width: 300px;
+  display: flex; flex-direction: column;
+  overflow-y: auto;
+}
+.neo-profile-top {
+  background: linear-gradient(160deg, rgba(59,130,246,.1) 0%, transparent 100%);
+  padding: 48px 24px 24px; display: flex; flex-direction: column;
+  align-items: center; gap: 10px;
+  border-bottom: 1px solid rgba(255,255,255,.07); position: relative;
+}
+.neo-profile-close {
+  position: absolute; top: 14px; right: 14px;
+  background: none; border: none; color: rgba(255,255,255,.35);
+  font-size: 1.1rem; cursor: pointer; padding: 4px 8px;
+  border-radius: 6px; transition: color .2s, background .2s;
+}
+.neo-profile-close:hover { color: #fff; background: rgba(255,255,255,.07); }
+.neo-profile-avatar-lg {
+  width: 68px; height: 68px; border-radius: 50%;
+  background: rgba(59,130,246,.22); border: 2px solid rgba(59,130,246,.4);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.5rem; font-weight: 700; color: #fff;
+  font-family: 'Inter', sans-serif; overflow: hidden;
+}
+.neo-profile-name-display {
+  font-weight: 700; font-size: 1rem; color: #fff;
+  font-family: 'Inter', sans-serif; text-align: center;
+}
+.neo-profile-email-display {
+  font-size: .72rem; color: rgba(255,255,255,.35);
+  font-family: 'Inter', sans-serif; text-align: center;
+}
+.neo-profile-body {
+  padding: 20px 20px; display: flex; flex-direction: column;
+  gap: 14px; flex: 1;
+}
+.neo-profile-field { display: flex; flex-direction: column; gap: 5px; }
+.neo-profile-label {
+  font-size: .68rem; font-weight: 600; letter-spacing: .06em;
+  color: rgba(255,255,255,.35); text-transform: uppercase;
+  font-family: 'Inter', sans-serif;
+}
+.neo-profile-input {
+  background: rgba(255,255,255,.06);
+  border: 1px solid rgba(255,255,255,.09);
+  border-radius: 8px; padding: 9px 12px;
+  color: #fff; font-size: .875rem; font-family: 'Inter', sans-serif;
+  outline: none; width: 100%; box-sizing: border-box;
+  transition: border-color .2s;
+}
+.neo-profile-input:focus { border-color: #3B82F6; }
+.neo-profile-input::placeholder { color: rgba(255,255,255,.22); }
+.neo-profile-color-row {
+  display: flex; align-items: center; gap: 10px;
+}
+.neo-profile-color-input {
+  width: 36px; height: 36px; border-radius: 8px;
+  border: 1px solid rgba(255,255,255,.15); cursor: pointer;
+  padding: 2px; background: none; flex-shrink: 0;
+}
+.neo-profile-color-label {
+  font-size: .78rem; color: rgba(255,255,255,.4);
+  font-family: 'Inter', sans-serif;
+}
+.neo-profile-save {
+  background: #3B82F6; color: #fff; border: none;
+  border-radius: 8px; padding: 10px 20px;
+  font-size: .875rem; font-weight: 600;
+  font-family: 'Inter', sans-serif; cursor: pointer;
+  transition: background .2s; width: 100%;
+}
+.neo-profile-save:hover { background: #2563EB; }
+.neo-profile-footer {
+  padding: 16px 20px 28px;
+  border-top: 1px solid rgba(255,255,255,.07);
+}
+.neo-profile-logout {
+  width: 100%; background: rgba(239,68,68,.1);
+  border: 1px solid rgba(239,68,68,.22);
+  color: #FCA5A5; border-radius: 8px; padding: 10px;
+  font-size: .875rem; font-weight: 600;
+  font-family: 'Inter', sans-serif; cursor: pointer;
+  transition: background .2s;
+}
+.neo-profile-logout:hover { background: rgba(239,68,68,.2); }
 `;
 
-const BODY_HTML = `<!-- LOGIN OVERLAY -->
+const BODY_HTML = `<!-- LOGIN / SIGNUP OVERLAY -->
 <div id="neo-login-overlay">
-  <div class="neo-login-card">
+
+  <!-- ── Sign In ── -->
+  <div class="neo-login-card" id="neo-view-signin">
     <div class="neo-login-logo">⬡</div>
     <h1 class="neo-login-title">Life OS</h1>
-    <p class="neo-login-sub">NeoGurpreet &nbsp;·&nbsp; IIT Roorkee</p>
-    <div id="neo-login-err" class="neo-login-err"></div>
-    <input id="neo-login-email" class="neo-login-input" type="email" placeholder="Email" autocomplete="email" />
-    <input id="neo-login-pass" class="neo-login-input" type="password" placeholder="Password" autocomplete="current-password" />
-    <button id="neo-login-btn" class="neo-login-btn">Sign In</button>
+    <p class="neo-login-sub">Sign in to continue</p>
+    <div id="neo-signin-err" class="neo-login-err"></div>
+    <input id="neo-signin-email" class="neo-login-input" type="email" placeholder="Email" autocomplete="email" />
+    <input id="neo-signin-pass" class="neo-login-input" type="password" placeholder="Password" autocomplete="current-password" />
+    <button id="neo-signin-btn" class="neo-login-btn">Sign In</button>
+    <div class="neo-login-switch">No account? <button id="neo-go-signup">Sign up</button></div>
+  </div>
+
+  <!-- ── Sign Up ── -->
+  <div class="neo-login-card" id="neo-view-signup" style="display:none">
+    <div class="neo-login-logo">⬡</div>
+    <h1 class="neo-login-title">Create Account</h1>
+    <p class="neo-login-sub">Join Life OS — free, private, yours</p>
+    <div id="neo-signup-err" class="neo-login-err"></div>
+    <input id="neo-signup-name" class="neo-login-input" type="text" placeholder="Display name" autocomplete="name" />
+    <input id="neo-signup-email" class="neo-login-input" type="email" placeholder="Email" autocomplete="email" />
+    <input id="neo-signup-pass" class="neo-login-input" type="password" placeholder="Password (min 8 chars)" autocomplete="new-password" />
+    <input id="neo-signup-pass2" class="neo-login-input" type="password" placeholder="Confirm password" autocomplete="new-password" />
+    <button id="neo-signup-btn" class="neo-login-btn">Create Account</button>
+    <div class="neo-login-switch">Have an account? <button id="neo-go-signin">Sign in</button></div>
+  </div>
+
+  <!-- ── Verify Email ── -->
+  <div class="neo-login-card" id="neo-view-verify" style="display:none">
+    <div class="neo-login-logo" style="font-size:1.6rem">✉</div>
+    <h1 class="neo-login-title">Check your email</h1>
+    <p class="neo-login-sub" id="neo-verify-sub">Enter the 6-digit code we sent you</p>
+    <div id="neo-verify-err" class="neo-login-err"></div>
+    <input id="neo-verify-code" class="neo-login-input neo-otp-input" type="text" placeholder="000000" maxlength="6" inputmode="numeric" autocomplete="one-time-code" />
+    <button id="neo-verify-btn" class="neo-login-btn">Verify Email</button>
+    <div class="neo-login-switch"><button id="neo-resend-btn">Resend code</button></div>
+  </div>
+
+</div>
+
+<!-- PROFILE BUTTON -->
+<button id="neo-profile-btn" title="Your profile">U</button>
+
+<!-- PROFILE OVERLAY -->
+<div id="neo-profile-overlay">
+  <div class="neo-profile-card">
+    <div class="neo-profile-top">
+      <button class="neo-profile-close" id="neo-profile-close">&#x2715;</button>
+      <div class="neo-profile-avatar-lg" id="neo-profile-avatar-lg">U</div>
+      <div class="neo-profile-name-display" id="neo-profile-name-display">User</div>
+      <div class="neo-profile-email-display" id="neo-profile-email-display"></div>
+    </div>
+    <div class="neo-profile-body">
+      <div class="neo-profile-field">
+        <span class="neo-profile-label">Display Name</span>
+        <input id="neo-pf-name" class="neo-profile-input" type="text" placeholder="Your name" />
+      </div>
+      <div class="neo-profile-field">
+        <span class="neo-profile-label">Institution</span>
+        <input id="neo-pf-institution" class="neo-profile-input" type="text" placeholder="e.g. IIT Roorkee" />
+      </div>
+      <div class="neo-profile-field">
+        <span class="neo-profile-label">Batch / Year</span>
+        <input id="neo-pf-batch" class="neo-profile-input" type="text" placeholder="e.g. 2025 · Sem 1" />
+      </div>
+      <div class="neo-profile-field">
+        <span class="neo-profile-label">Avatar URL</span>
+        <input id="neo-pf-avatar" class="neo-profile-input" type="url" placeholder="https://..." />
+      </div>
+      <div class="neo-profile-field">
+        <span class="neo-profile-label">Accent Color</span>
+        <div class="neo-profile-color-row">
+          <input id="neo-pf-color" class="neo-profile-color-input" type="color" value="#3B82F6" />
+          <span class="neo-profile-color-label">Personalise your accent</span>
+        </div>
+      </div>
+      <button class="neo-profile-save" id="neo-profile-save">Save Changes</button>
+    </div>
+    <div class="neo-profile-footer">
+      <button class="neo-profile-logout" id="neo-profile-logout-btn">Sign Out</button>
+    </div>
   </div>
 </div>
 
 <!-- HERO -->
 <section class="hero">
-  <div class="hero-eyebrow">Life Operating System · IIT Roorkee · Sem 1 · 2026</div>
-  <h1 class="hero-name">NeoGurpreet</h1>
-  <p class="hero-sub">Mathematics &amp; Computing (BS-MS) &nbsp;·&nbsp; Rajendra Bhawan<br>Class Representative &nbsp;·&nbsp; Autumn Semester</p>
+  <div class="hero-eyebrow" id="neo-hero-eyebrow">Life Operating System · IIT Roorkee · Sem 1 · 2026</div>
+  <h1 class="hero-name" id="neo-hero-name">NeoGurpreet</h1>
+  <p class="hero-sub" id="neo-hero-sub">Mathematics &amp; Computing (BS-MS) &nbsp;·&nbsp; Rajendra Bhawan<br>Class Representative &nbsp;·&nbsp; Autumn Semester</p>
   <div class="hero-rule"></div>
   <div class="hero-pills">
     <span class="hero-pill" id="hp-done">— done</span>
