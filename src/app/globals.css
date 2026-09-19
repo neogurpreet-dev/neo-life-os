@@ -73,21 +73,6 @@
 }
 
 /* Tailwind v4 theme tokens */
-@theme {
-  --color-life-background:     #000000;
-  --color-life-surface:        #0f0f0f;
-  --color-life-surface-2:      #161818;
-  --color-life-border:         #2a2a2a;
-  --color-life-border-hover:   #3d3d3d;
-  --color-life-text:           #ffffff;
-  --color-life-text-secondary: #b3b8bd;
-  --color-life-text-muted:     #5a6270;
-  --color-life-accent:         #3b82f6;
-  --color-life-success:        #22c55e;
-  --color-life-warning:        #f59e0b;
-  --color-life-error:          #ef4444;
-}
-
 /* ══════════════════════════════════════════
    BASE
    ══════════════════════════════════════════ */
