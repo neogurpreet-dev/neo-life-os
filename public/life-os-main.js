@@ -1,3 +1,74 @@
+/* ═══════════════════════════════════════════════════════════
+   NEO LIFE OS — CLOUD SYNC LAYER
+   Runs before all IIFEs. On first load per session:
+   1. Hides body to prevent stale-data flash
+   2. Fetches all cloud data into localStorage
+   3. Reloads so IIFEs init with fresh data
+   Every localStorage write is mirrored to Supabase in the background.
+═══════════════════════════════════════════════════════════ */
+(function () {
+  'use strict';
+
+  var SYNC_KEYS = [
+    'kanban_tasks_v2','pomo_queue_v1','pomo_log_v2',
+    'eng_vocab_v1','eng_reading_v1','eng_practice_v1',
+    'fit_log_v1','fit_skills_v1','fit_nutrition_v2','fit_skill_trees_v1',
+    'habits_v1','lifeos_reminders','wt_data_v1','wt_last_reset_v1'
+  ];
+
+  var SYNC_KEY_SET = {};
+  for (var i = 0; i < SYNC_KEYS.length; i++) SYNC_KEY_SET[SYNC_KEYS[i]] = true;
+
+  /* ── 1. Intercept writes → background POST to /api/sync ── */
+  var _origSet = Storage.prototype.setItem;
+  Storage.prototype.setItem = function (key, value) {
+    _origSet.call(this, key, value);
+    if (this === localStorage && SYNC_KEY_SET[key]) {
+      var parsed;
+      try { parsed = JSON.parse(value); } catch (e) { parsed = value; }
+      fetch('/api/sync', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ key: key, value: parsed })
+      }).catch(function () {});
+    }
+  };
+
+  /* ── 2. On first load per session: pull cloud → localStorage → reload ── */
+  var SESSION_FLAG = 'neo_cloud_synced_v1';
+  if (sessionStorage.getItem(SESSION_FLAG)) return;
+
+  document.documentElement.style.opacity = '0';
+
+  fetch('/api/sync/bulk', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ keys: SYNC_KEYS })
+  })
+    .then(function (r) { return r.json(); })
+    .then(function (data) {
+      var items = data.items || [];
+      var updated = false;
+      for (var j = 0; j < items.length; j++) {
+        var item = items[j];
+        if (item.value !== null) {
+          var newVal = typeof item.value === 'string' ? item.value : JSON.stringify(item.value);
+          if (localStorage.getItem(item.key) !== newVal) {
+            _origSet.call(localStorage, item.key, newVal);
+            updated = true;
+          }
+        }
+      }
+      sessionStorage.setItem(SESSION_FLAG, '1');
+      if (updated) { window.location.reload(); }
+      else { document.documentElement.style.opacity = ''; }
+    })
+    .catch(function () {
+      sessionStorage.setItem(SESSION_FLAG, '1');
+      document.documentElement.style.opacity = '';
+    });
+})();
+
 
 /* ─── CONSTANTS ─── */
 const SUBJ = {
