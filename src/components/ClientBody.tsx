@@ -244,6 +244,7 @@ body::before {
 .hab-arow .hab-name { font-weight: 500; }
 /* habit edit modal — centered, matches other add/edit dialogs in the app */
 .hab-ov {
+  -webkit-position: fixed; inset: 0; background: rgba(0,0,0,.62); backdrop-filter: blur(6px);
   position: fixed; inset: 0; background: rgba(0,0,0,.62); backdrop-filter: blur(6px);
   display: flex; align-items: center; justify-content: center; padding: 16px;
   z-index: 370; opacity: 0; pointer-events: none; transition: opacity .2s;
@@ -344,6 +345,7 @@ body::before {
 }
 .ntn-fab:hover { transform: translateY(-2px); box-shadow: 0 12px 30px rgba(0,0,0,.6); }
 .ntn-ov {
+  -webkit-position: fixed; inset: 0; background: rgba(0,0,0,.62); backdrop-filter: blur(6px);
   position: fixed; inset: 0; background: rgba(0,0,0,.62); backdrop-filter: blur(6px);
   display: flex; align-items: center; justify-content: center; padding: 16px;
   z-index: 950; opacity: 0; pointer-events: none; transition: opacity .2s;
@@ -531,6 +533,7 @@ body::before {
 }
 /* edit modal — centered, matches the app's other add/edit dialogs */
 .rem-ov {
+  -webkit-position: fixed; inset: 0; background: rgba(0,0,0,.62); backdrop-filter: blur(6px);
   position: fixed; inset: 0; background: rgba(0,0,0,.62); backdrop-filter: blur(6px);
   display: flex; align-items: center; justify-content: center; padding: 16px;
   z-index: 370; opacity: 0; pointer-events: none; transition: opacity .2s;
@@ -762,6 +765,7 @@ body::before {
   border: 1px solid var(--gb);
   border-radius: 24px;
   padding: 28px 24px 24px;
+  -webkit-backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
   backdrop-filter: blur(20px);
   display: flex;
@@ -1290,6 +1294,7 @@ body::before {
 .eng-empty p   { font-size:13px; line-height:1.6; }
 /* overlay + modal */
 .eng-ov {
+  -webkit-position:fixed; inset:0; background:rgba(0,0,0,.62); backdrop-filter:blur(6px);
   position:fixed; inset:0; background:rgba(0,0,0,.62); backdrop-filter:blur(6px);
   display:flex; align-items:center; justify-content:center; padding:16px;
   z-index:380; opacity:0; pointer-events:none; transition:opacity .2s;
@@ -1433,11 +1438,13 @@ body::before {
 }
 .fit-open-btn:hover { border-color:var(--fa); background:var(--fa-d); }
 .fit-session-mini { background:var(--g1); border:1px solid var(--gb); border-radius:12px;
+  -webkit-padding:12px 16px; margin-bottom:8px; display:flex; align-items:center; gap:12px; backdrop-filter:blur(20px); }
   padding:12px 16px; margin-bottom:8px; display:flex; align-items:center; gap:12px; backdrop-filter:blur(20px); }
 .fit-session-mini-name { font-size:13px; font-weight:600; color:var(--t1); flex:1; }
 .fit-session-mini-meta { font-size:11px; color:var(--t3); font-family:'DM Mono',monospace; }
 #fit-page { display:none; position:fixed; inset:0; z-index:360; background:var(--bg); overflow-y:auto; -webkit-overflow-scrolling:touch; }
 #fit-page.vis { display:block; }
+-webkit-.fit-bar { position:sticky; top:0; z-index:10; background:var(--bg); border-bottom:1px solid var(--gb); backdrop-filter:blur(14px); display:flex; align-items:center; gap:14px; padding:14px 24px; }
 .fit-bar { position:sticky; top:0; z-index:10; background:var(--bg); border-bottom:1px solid var(--gb); backdrop-filter:blur(14px); display:flex; align-items:center; gap:14px; padding:14px 24px; }
 .fit-back { background:var(--g1); border:1px solid var(--gb); border-radius:8px; color:var(--t2); font-family:'DM Sans',sans-serif; font-size:13px; font-weight:600; padding:6px 13px; cursor:pointer; white-space:nowrap; transition:color .15s; }
 .fit-back:hover { color:var(--t1); }
@@ -1454,6 +1461,7 @@ body::before {
 .fit-pstat2 { font-size:13px; color:var(--t2); }
 .fit-pstat2 strong { color:var(--t1); font-family:'DM Mono',monospace; font-weight:500; }
 .fit-log-list { display:flex; flex-direction:column; gap:10px; }
+-webkit-.fit-session-card { background:var(--g1); border:1px solid var(--gb); border-radius:14px; padding:16px 18px; cursor:pointer; backdrop-filter:blur(20px); transition:border-color .15s; }
 .fit-session-card { background:var(--g1); border:1px solid var(--gb); border-radius:14px; padding:16px 18px; cursor:pointer; backdrop-filter:blur(20px); transition:border-color .15s; }
 .fit-session-card:hover { border-color:var(--fa); }
 .fit-session-top { display:flex; align-items:flex-start; justify-content:space-between; gap:10px; }
@@ -1468,6 +1476,7 @@ body::before {
 .fit-session-notes { font-size:12px; color:var(--t3); margin-top:8px; font-style:italic; }
 .fit-skills-intro { font-size:13px; color:var(--t2); line-height:1.6; margin-bottom:18px; }
 .fit-skills-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(280px,1fr)); gap:14px; }
+-webkit-.fit-skill-card { background:var(--g1); border:1px solid var(--gb); border-radius:14px; padding:18px; backdrop-filter:blur(20px); }
 .fit-skill-card { background:var(--g1); border:1px solid var(--gb); border-radius:14px; padding:18px; backdrop-filter:blur(20px); }
 .fit-skill-name { font-size:14px; font-weight:700; color:var(--t1); margin-bottom:3px; }
 .fit-skill-sub { font-size:11px; color:var(--t3); font-family:'DM Mono',monospace; margin-bottom:14px; }
@@ -1485,6 +1494,7 @@ body::before {
 .fit-skill-step.f-done    .fit-step-icon { opacity:1; }
 .fit-skill-step.f-current .fit-step-icon { opacity:1; }
 .fit-nut-list { display:flex; flex-direction:column; gap:8px; }
+-webkit-.fit-nut-card { background:var(--g1); border:1px solid var(--gb); border-radius:12px; padding:13px 16px; display:flex; align-items:flex-start; gap:12px; cursor:pointer; backdrop-filter:blur(20px); transition:border-color .15s; }
 .fit-nut-card { background:var(--g1); border:1px solid var(--gb); border-radius:12px; padding:13px 16px; display:flex; align-items:flex-start; gap:12px; cursor:pointer; backdrop-filter:blur(20px); transition:border-color .15s; }
 .fit-nut-card:hover { border-color:rgba(34,197,94,.3); }
 .fit-nut-icon { width:34px; height:34px; border-radius:9px; display:flex; align-items:center; justify-content:center; font-size:16px; flex-shrink:0; background:var(--fa-d); }
@@ -1492,6 +1502,7 @@ body::before {
 .fit-nut-name { font-size:14px; font-weight:600; color:var(--t1); margin-bottom:3px; }
 .fit-nut-meta { font-size:12px; color:var(--t3); display:flex; gap:10px; flex-wrap:wrap; font-family:'DM Mono',monospace; }
 .fit-nut-days { display:flex; flex-direction:column; gap:8px; }
+-webkit-.fit-nut-day-card { background:var(--g1); border:1px solid var(--gb); border-radius:14px; padding:14px 18px; cursor:pointer; backdrop-filter:blur(20px); transition:border-color .15s; display:flex; align-items:center; gap:14px; }
 .fit-nut-day-card { background:var(--g1); border:1px solid var(--gb); border-radius:14px; padding:14px 18px; cursor:pointer; backdrop-filter:blur(20px); transition:border-color .15s; display:flex; align-items:center; gap:14px; }
 .fit-nut-day-card:hover { border-color:rgba(34,197,94,.35); }
 .fit-nut-day-date { font-size:14px; font-weight:700; color:var(--t1); min-width:120px; }
@@ -1500,6 +1511,7 @@ body::before {
 .fit-nut-day-cnt { font-size:10px; font-weight:700; padding:3px 9px; border-radius:20px; background:var(--fa-d); color:var(--fa); text-transform:uppercase; letter-spacing:.05em; white-space:nowrap; }
 .fit-nut-more { width:100%; padding:9px; margin-top:2px; background:transparent; border:1px dashed var(--gb); border-radius:10px; color:var(--t3); font-family:'DM Sans',sans-serif; font-size:12px; font-weight:600; cursor:pointer; transition:color .15s,border-color .15s; }
 .fit-nut-more:hover { color:var(--t1); border-color:var(--t2); }
+-webkit-.fit-ov { position:fixed; inset:0; background:rgba(0,0,0,.62); backdrop-filter:blur(6px); display:flex; align-items:center; justify-content:center; padding:16px; z-index:400; opacity:0; pointer-events:none; transition:opacity .2s; }
 .fit-ov { position:fixed; inset:0; background:rgba(0,0,0,.62); backdrop-filter:blur(6px); display:flex; align-items:center; justify-content:center; padding:16px; z-index:400; opacity:0; pointer-events:none; transition:opacity .2s; }
 .fit-ov.vis { opacity:1; pointer-events:all; }
 .fit-modal { background:#131723; border:1px solid rgba(255,255,255,.1); border-radius:20px; padding:26px 22px 28px; width:100%; max-width:560px; transform:translateY(14px) scale(.97); transition:transform .22s; max-height:90vh; overflow-y:auto; }
@@ -1546,6 +1558,7 @@ body::before {
   position: fixed;
   inset: 0;
   background: rgba(0,0,0,.82);
+  -webkit-backdrop-filter: blur(12px);
   backdrop-filter: blur(12px);
   z-index: 955;
   opacity: 0;
@@ -1619,6 +1632,7 @@ body::before {
   position: fixed;
   inset: 0;
   background: rgba(0,0,0,.82);
+  -webkit-backdrop-filter: blur(12px);
   backdrop-filter: blur(12px);
   z-index: 955;
   opacity: 0;
@@ -1764,6 +1778,7 @@ body::before {
 }
 .wt-pri-inp:focus { border-color: var(--accent); }
 .wt-reset-ov {
+  -webkit-position: fixed; inset: 0; background: rgba(0,0,0,.65); backdrop-filter: blur(8px);
   position: fixed; inset: 0; background: rgba(0,0,0,.65); backdrop-filter: blur(8px);
   display: flex; align-items: center; justify-content: center; padding: 16px;
   z-index: 960; opacity: 0; pointer-events: none; transition: opacity .2s;
@@ -1789,6 +1804,26 @@ body::before {
 .vis {
   opacity: 1 !important;
   pointer-events: all !important;
+}
+
+/* ─── GLOBAL COMPAT: backdrop-filter fallback ─── */
+@supports not (backdrop-filter: blur(1px)) and not (-webkit-backdrop-filter: blur(1px)) {
+  /* Increase opacity of glass surfaces so they're readable without blur */
+  .card, .widget, .overlay-box, .hab-item, .rem-item,
+  .bp-panel, .cal-modal, .kan-col, .pom-wrap {
+    background: rgba(18, 22, 38, 0.92) !important;
+    border-color: rgba(255,255,255,0.15) !important;
+  }
+}
+
+/* ─── MOBILE PERF: reduce blur radius on small screens ─── */
+@media (max-width: 768px) {
+  .card, .widget, .overlay-box, .hab-item, .rem-item,
+  .bp-panel, .cal-modal, .kan-col, .pom-wrap,
+  .hero-pill, .eng-card {
+    -webkit-backdrop-filter: blur(8px) !important;
+    backdrop-filter: blur(8px) !important;
+  }
 }
 `;
 
