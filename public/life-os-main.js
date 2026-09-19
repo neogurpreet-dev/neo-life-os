@@ -931,7 +931,7 @@ renderRings();
   }
 
   /* ── Seed ── */
-  if (!vocab.length) {
+  if (localStorage.getItem(VK) === null) {
     vocab = [
       { id:uid(), word:'Ephemeral', def:'Lasting for a very short time; transitory.', ex:'The ephemeral beauty of the northern lights left everyone speechless.', src:'Reading', status:'learning', date:TODAY },
       { id:uid(), word:'Verbose',   def:'Using more words than necessary; long-winded.', ex:'His verbose response confused rather than clarified the issue.', src:'', status:'new', date:TODAY },
