@@ -1,9 +1,8 @@
-import { LogoCloud } from '@/components/ui/LogoCloud'
+import LogoCloud from '@/components/ui/LogoCloud'
 
 export default function PreviewPage() {
   return (
-    <main style={{ minHeight: '100vh' }}>
-      {/* Component #1 — Logos with Blur Flip */}
+    <main className="min-h-screen bg-black">
       <LogoCloud />
     </main>
   )
