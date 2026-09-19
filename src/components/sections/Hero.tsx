@@ -1,64 +1,148 @@
-'use client'
+'use client';
 
-import { useEffect, useState } from 'react'
-
-const SUBJECTS = ['MA101', 'PH101', 'CS101', 'HSS', 'PE']
-
-interface HeroProps {
-  onBlueprintOpen?: () => void
-  onCalendarOpen?: () => void
-}
-
-export default function Hero({ onBlueprintOpen, onCalendarOpen }: HeroProps) {
-  const [dateStr, setDateStr] = useState('')
-
-  useEffect(() => {
-    const now = new Date()
-    const day = now.toLocaleDateString('en-US', { weekday: 'long' })
-    const date = now.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
-    setDateStr(`${day} · ${date}`)
-  }, [])
-
+export default function Hero() {
   return (
-    <section className="w-full">
-      {/* Header bar */}
-      <div className="w-full bg-[var(--glass-1)] backdrop-blur-[11px] border-b border-[var(--glass-border)]">
-        <div className="flex items-center justify-between px-4 py-3 sm:px-6">
-          <span className="text-white font-bold tracking-wider text-sm sm:text-base">
-            NEO LIFE OS
-          </span>
-          <span className="text-[var(--t2)] text-xs sm:text-sm">{dateStr}</span>
-        </div>
+    <section style={{
+      minHeight: '64vh',
+      display: 'flex',
+      flexDirection: 'column',
+      alignItems: 'center',
+      justifyContent: 'center',
+      textAlign: 'center',
+      padding: '88px 24px 56px',
+    }}>
+      {/* Eyebrow */}
+      <div style={{
+        fontFamily: 'var(--mono)',
+        fontSize: '10px',
+        letterSpacing: '.22em',
+        textTransform: 'uppercase',
+        color: 'var(--accent)',
+        marginBottom: '24px',
+        opacity: 0.9,
+      }}>
+        Life Operating System · IIT Roorkee · Sem 1 · 2026
       </div>
 
-      {/* Subject pills + quick-launch buttons */}
-      <div className="flex flex-wrap items-center justify-between gap-3 px-4 py-3 sm:px-6">
-        <div className="flex flex-wrap gap-1.5">
-          {SUBJECTS.map((subject) => (
-            <span
-              key={subject}
-              className="bg-[var(--glass-1)] border border-[var(--glass-border)] text-[var(--t2)] text-xs px-2.5 py-1 rounded-full"
-            >
-              {subject}
-            </span>
-          ))}
-        </div>
+      {/* Name */}
+      <h1 style={{
+        fontWeight: 900,
+        fontSize: 'clamp(60px, 10vw, 104px)',
+        letterSpacing: '-5px',
+        lineHeight: 0.90,
+        background: 'linear-gradient(160deg, #fff 0%, rgba(255,255,255,.65) 100%)',
+        WebkitBackgroundClip: 'text',
+        WebkitTextFillColor: 'transparent',
+        backgroundClip: 'text',
+      }}>
+        NeoGurpreet
+      </h1>
 
-        <div className="flex flex-wrap gap-2">
-          <button
-            onClick={onBlueprintOpen}
-            className="bg-[var(--glass-1)] border border-[var(--glass-border)] text-[var(--t2)] text-xs sm:text-sm px-3 py-1.5 rounded-lg transition-colors hover:border-[var(--accent)] hover:text-white"
+      {/* Sub */}
+      <p style={{
+        marginTop: '24px',
+        fontSize: 'clamp(12px, 1.4vw, 14px)',
+        color: 'var(--t2)',
+        letterSpacing: '.01em',
+        lineHeight: 1.75,
+        fontWeight: 400,
+      }}>
+        Mathematics &amp; Computing (BS-MS) &nbsp;·&nbsp; Rajendra Bhawan
+        <br />
+        Class Representative &nbsp;·&nbsp; Autumn Semester
+      </p>
+
+      {/* Rule */}
+      <div style={{
+        width: '48px',
+        height: '1px',
+        margin: '28px auto 0',
+        background: 'linear-gradient(90deg, transparent, rgba(59,130,246,.8), transparent)',
+      }} />
+
+      {/* Dynamic pills row (stats placeholders) */}
+      <div style={{
+        marginTop: '32px',
+        display: 'flex',
+        flexWrap: 'wrap' as const,
+        gap: '8px',
+        justifyContent: 'center',
+      }}>
+        {[
+          { label: '— done', id: 'hp-done' },
+          { label: '— due this week', id: 'hp-week' },
+        ].map((p) => (
+          <span
+            key={p.id}
+            id={p.id}
+            style={{
+              fontFamily: 'var(--mono)',
+              fontSize: '10px',
+              letterSpacing: '.07em',
+              color: 'var(--t3)',
+              background: 'var(--g1)',
+              border: '1px solid var(--gb)',
+              borderRadius: '9999px',
+              padding: '5px 14px',
+              WebkitBackdropFilter: 'blur(16px)',
+              backdropFilter: 'blur(16px)',
+            }}
           >
-            🏛 Blueprint
-          </button>
-          <button
-            onClick={onCalendarOpen}
-            className="bg-[var(--glass-1)] border border-[var(--glass-border)] text-[var(--t2)] text-xs sm:text-sm px-3 py-1.5 rounded-lg transition-colors hover:border-[var(--accent)] hover:text-white"
+            {p.label}
+          </span>
+        ))}
+      </div>
+
+      {/* Subject pills row */}
+      <div style={{
+        marginTop: '10px',
+        display: 'flex',
+        flexWrap: 'wrap' as const,
+        gap: '8px',
+        justifyContent: 'center',
+      }}>
+        {[
+          { code: 'MAI-101', color: '#93C5FD', border: 'rgba(147,197,253,.25)' },
+          { code: 'PHI-101', color: '#C4B5FD', border: 'rgba(196,181,253,.25)' },
+          { code: 'MAC-101', color: '#6EE7B7', border: 'rgba(110,231,183,.25)' },
+          { code: 'CSE-101', color: '#FCA5A5', border: 'rgba(252,165,165,.25)' },
+          { code: 'TMI-102', color: '#FCD34D', border: 'rgba(252,211,77,.25)'  },
+        ].map((s) => (
+          <span
+            key={s.code}
+            style={{
+              fontFamily: 'var(--mono)',
+              fontSize: '10px',
+              letterSpacing: '.07em',
+              color: s.color,
+              background: 'var(--g1)',
+              border: `1px solid ${s.border}`,
+              borderRadius: '9999px',
+              padding: '5px 14px',
+              WebkitBackdropFilter: 'blur(16px)',
+              backdropFilter: 'blur(16px)',
+            }}
           >
-            📅 Weekly Architecture
-          </button>
-        </div>
+            {s.code}
+          </span>
+        ))}
+      </div>
+
+      {/* Action buttons */}
+      <div style={{
+        marginTop: '14px',
+        display: 'flex',
+        gap: '10px',
+        flexWrap: 'wrap' as const,
+        justifyContent: 'center',
+      }}>
+        <button className="bp-open-btn">
+          📐 Life Architecture Blueprint
+        </button>
+        <button className="cal-open-btn">
+          📅 Weekly Architecture
+        </button>
       </div>
     </section>
-  )
+  );
 }
