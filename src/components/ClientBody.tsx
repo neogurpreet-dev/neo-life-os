@@ -2041,11 +2041,10 @@ const BODY_HTML = `<!-- LOGIN / SIGNUP OVERLAY -->
   <div class="neo-login-card" id="neo-view-verify" style="display:none">
     <div class="neo-login-logo" style="font-size:1.6rem">✉</div>
     <h1 class="neo-login-title">Check your email</h1>
-    <p class="neo-login-sub" id="neo-verify-sub">Enter the 6-digit code we sent you</p>
+    <p class="neo-login-sub" id="neo-verify-sub">Click the confirmation link we sent you to activate your account</p>
     <div id="neo-verify-err" class="neo-login-err"></div>
-    <input id="neo-verify-code" class="neo-login-input neo-otp-input" type="text" placeholder="000000" maxlength="6" inputmode="numeric" autocomplete="one-time-code" />
-    <button id="neo-verify-btn" class="neo-login-btn">Verify Email</button>
-    <div class="neo-login-switch"><button id="neo-resend-btn">Resend code</button></div>
+    <button id="neo-verify-btn" class="neo-login-btn">I've confirmed — sign me in</button>
+    <div class="neo-login-switch"><button id="neo-resend-btn">Resend email</button></div>
   </div>
 
 </div>

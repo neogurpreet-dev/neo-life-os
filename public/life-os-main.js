@@ -287,7 +287,7 @@
             bootSync();
           } else {
             var sub = document.getElementById('neo-verify-sub');
-            if (sub) sub.textContent = 'We sent a 6-digit code to ' + email;
+            if (sub) sub.textContent = 'We sent a confirmation link to ' + email + ' — click it to activate your account';
             setErr('neo-verify-err', '');
             showView('neo-view-verify');
           }
@@ -301,40 +301,35 @@
     if (signupBtn) signupBtn.onclick = attemptSignup;
     if (goSignin)  goSignin.onclick  = function () { setErr('neo-signin-err', ''); showView('neo-view-signin'); };
 
-    /* ─ Verify OTP ─ */
-    var verifyBtn  = document.getElementById('neo-verify-btn');
-    var verifyCode = document.getElementById('neo-verify-code');
-    var resendBtn  = document.getElementById('neo-resend-btn');
+    /* ─ Verify (magic link) ─ */
+    var verifyBtn = document.getElementById('neo-verify-btn');
+    var resendBtn = document.getElementById('neo-resend-btn');
 
-    function attemptVerify() {
-      setErr('neo-verify-err', '');
-      var code = verifyCode ? verifyCode.value.replace(/\D/g, '') : '';
-      if (code.length !== 6) { setErr('neo-verify-err', 'Enter the full 6-digit code'); return; }
-      verifyBtn.textContent = 'Verifying…'; verifyBtn.disabled = true;
-      doVerifyOtp(_pendingEmail, code)
-        .then(function (data) {
-          saveAuth(data);
-          // Seed initial profile with display name (sync will push it to Supabase)
+    if (verifyBtn) verifyBtn.onclick = function () {
+      verifyBtn.textContent = 'Checking…'; verifyBtn.disabled = true;
+      getValidToken().then(function (token) {
+        if (token) {
+          // If we stored a display name during signup, seed the profile now
           if (_pendingName) {
             _origSet.call(localStorage, PROFILE_KEY, JSON.stringify({ displayName: _pendingName }));
           }
           overlay.style.display = 'none';
           sessionStorage.removeItem(SESSION_FLAG);
           bootSync();
-        })
-        .catch(function (e) {
-          verifyBtn.textContent = 'Verify Email'; verifyBtn.disabled = false;
-          setErr('neo-verify-err', e.message);
-        });
-    }
+        } else {
+          verifyBtn.textContent = "I\'ve confirmed — sign me in"; verifyBtn.disabled = false;
+          setErr('neo-verify-err', 'Not verified yet — click the link in your email first, then come back here');
+        }
+      });
+    };
 
-    if (verifyBtn)  verifyBtn.onclick = attemptVerify;
-    if (verifyCode) verifyCode.onkeydown = function (e) { if (e.key === 'Enter') attemptVerify(); };
-    if (resendBtn)  resendBtn.onclick = function () {
+    if (resendBtn) resendBtn.onclick = function () {
       resendBtn.textContent = 'Sending…'; resendBtn.disabled = true;
       doResendOtp(_pendingEmail).then(function () {
         resendBtn.textContent = 'Sent ✓';
-        setTimeout(function () { resendBtn.textContent = 'Resend code'; resendBtn.disabled = false; }, 3000);
+        setTimeout(function () { resendBtn.textContent = 'Resend email'; resendBtn.disabled = false; }, 3000);
+      }).catch(function () {
+        resendBtn.textContent = 'Resend email'; resendBtn.disabled = false;
       });
     };
 

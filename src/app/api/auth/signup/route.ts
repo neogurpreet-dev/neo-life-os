@@ -17,18 +17,22 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Email is required' }, { status: 400 })
   }
 
-  // Resend confirmation OTP
+  // Build the callback URL from the incoming request origin
+  const origin = req.headers.get('origin') || req.nextUrl.origin
+  const redirectTo = `${origin}/auth/callback`
+
+  // Resend confirmation email (magic link)
   if (resend) {
     const res = await fetch(`${SUPABASE_URL}/auth/v1/resend`, {
       method: 'POST',
       headers: { 'apikey': SUPABASE_ANON, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, type: 'signup' }),
+      body: JSON.stringify({ email, type: 'signup', options: { emailRedirectTo: redirectTo } }),
     })
     if (!res.ok) {
       const data = await res.json()
       return NextResponse.json({ error: data.message || 'Resend failed' }, { status: res.status })
     }
-    return NextResponse.json({ message: 'Code resent' })
+    return NextResponse.json({ message: 'Email resent' })
   }
 
   // New sign-up
@@ -43,6 +47,7 @@ export async function POST(req: NextRequest) {
       email,
       password,
       data: { display_name: display_name || '' },
+      options: { emailRedirectTo: redirectTo },
     }),
   })
 
@@ -55,9 +60,10 @@ export async function POST(req: NextRequest) {
     )
   }
 
+  // confirmed = true means email confirmation is disabled and user is immediately active
   const confirmed = !!(data.access_token)
   return NextResponse.json({
-    message: confirmed ? 'Account created' : 'Check your email for a 6-digit verification code',
+    message: confirmed ? 'Account created' : 'Check your email for a confirmation link',
     confirmed,
     ...(confirmed ? {
       access_token:  data.access_token,
