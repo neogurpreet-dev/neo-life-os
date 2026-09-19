@@ -1,179 +1,158 @@
 "use client";
 
 import Image from "next/image";
-import { AnimatePresence, motion, useReducedMotion } from "motion/react";
-import { useEffect, useState } from "react";
+import { useReducedMotion } from "motion/react";
+import { useState } from "react";
 
+/* ─── Data ──────────────────────────────── */
 type Logo = { name: string; src: string };
 
-const LOGO_SETS: readonly Logo[][] = [
-  [
-    { name: "Notion", src: "/logos/notion.svg" },
-    { name: "Google Calendar", src: "/logos/google-calendar.svg" },
-    { name: "GitHub", src: "/logos/github.svg" },
-    { name: "Slack", src: "/logos/slack.svg" },
-    { name: "Figma", src: "/logos/figma.svg" },
-  ],
-  [
-    { name: "Linear", src: "/logos/linear.svg" },
-    { name: "Google Drive", src: "/logos/google-drive.svg" },
-    { name: "Discord", src: "/logos/discord.svg" },
-    { name: "Trello", src: "/logos/trello.svg" },
-    { name: "Vercel", src: "/logos/vercel.svg" },
-  ],
+const ALL_LOGOS: Logo[] = [
+  { name: "Notion",          src: "/logos/notion.svg"           },
+  { name: "Google Calendar", src: "/logos/google-calendar.svg"  },
+  { name: "GitHub",          src: "/logos/github.svg"           },
+  { name: "Slack",           src: "/logos/slack.svg"            },
+  { name: "Figma",           src: "/logos/figma.svg"            },
+  { name: "Linear",          src: "/logos/linear.svg"           },
+  { name: "Google Drive",    src: "/logos/google-drive.svg"     },
+  { name: "Discord",         src: "/logos/discord.svg"          },
+  { name: "Trello",          src: "/logos/trello.svg"           },
+  { name: "Vercel",          src: "/logos/vercel.svg"           },
 ];
 
-const ROTATION_INTERVAL = 3000;
-const EASE_OUT: [number, number, number, number] = [0.22, 1, 0.36, 1];
-const EASE_IN:  [number, number, number, number] = [0.4, 0, 1, 1];
+/* Split into two rows scrolling in opposite directions */
+const ROW_A = ALL_LOGOS.slice(0, 5);   // → left
+const ROW_B = ALL_LOGOS.slice(5, 10);  // → right
 
-export default function LogoCloud() {
-  const shouldReduceMotion = useReducedMotion();
-  const [activeSet, setActiveSet] = useState(0);
+/* Repeat to fill viewport width seamlessly */
+const repeat = <T,>(arr: T[], times = 6): T[] =>
+  Array.from({ length: times }, () => arr).flat();
 
-  useEffect(() => {
-    if (shouldReduceMotion || LOGO_SETS.length <= 1) return;
-    const id = window.setInterval(
-      () => setActiveSet((c) => (c + 1) % LOGO_SETS.length),
-      ROTATION_INTERVAL
-    );
-    return () => window.clearInterval(id);
-  }, [shouldReduceMotion]);
+const TRACK_A = repeat(ROW_A);
+const TRACK_B = repeat(ROW_B);
 
-  const visibleSet = shouldReduceMotion ? 0 : activeSet;
+/* ─── Single logo pill ───────────────────── */
+function LogoPill({ logo }: { logo: Logo }) {
+  const [error, setError] = useState(false);
 
   return (
-    <section
-      aria-labelledby="life-os-integrations"
-      className="relative overflow-hidden bg-black py-16 sm:py-20 lg:py-24"
+    <div
+      className="flex items-center gap-2.5 rounded-xl border border-[#2a2a2a] bg-[#0f0f0f] px-5 py-3
+                 whitespace-nowrap transition-all duration-200
+                 hover:border-[#3d3d3d] hover:bg-[#161818]"
+      aria-label={logo.name}
     >
-      <div
-        aria-hidden="true"
-        className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_50%_0%,rgba(255,255,255,0.045),transparent_42%)]"
-      />
-
-      <div className="relative mx-auto w-full max-w-6xl px-4 sm:px-6 lg:px-8">
-        {/* Header */}
-        <div className="mx-auto mb-8 max-w-2xl text-center sm:mb-10 lg:mb-12">
-          <p className="mb-3 text-[10px] font-medium uppercase tracking-[0.3em] text-zinc-500 sm:text-xs">
-            Built around your workflow
-          </p>
-          <h2
-            id="life-os-integrations"
-            className="text-2xl font-semibold tracking-tight text-white sm:text-3xl lg:text-4xl"
-          >
-            Everything you already use.
-          </h2>
-          <p className="mt-3 text-sm leading-6 text-zinc-500 sm:mt-4 sm:text-base">
-            Life OS brings your systems together without forcing you to rebuild
-            the way you work.
-          </p>
-        </div>
-
-        {/* Card */}
-        <div className="relative mx-auto w-full max-w-5xl overflow-hidden rounded-xl border border-white/[0.08] bg-white/[0.015] px-4 py-8 shadow-[0_0_80px_rgba(255,255,255,0.02)] sm:rounded-2xl sm:px-8 sm:py-10 lg:px-12 lg:py-12">
-          <div aria-hidden="true" className="pointer-events-none absolute inset-x-0 top-0 z-10 h-10 bg-gradient-to-b from-black to-transparent sm:h-14" />
-          <div aria-hidden="true" className="pointer-events-none absolute inset-x-0 bottom-0 z-10 h-10 bg-gradient-to-t from-black to-transparent sm:h-14" />
-
-          <div className="relative flex min-h-[72px] items-center justify-center sm:min-h-[88px] lg:min-h-[100px]">
-            <AnimatePresence mode="popLayout" initial={!shouldReduceMotion}>
-              <motion.div
-                key={visibleSet}
-                initial={shouldReduceMotion ? false : { opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={shouldReduceMotion ? undefined : { opacity: 0 }}
-                transition={{ duration: shouldReduceMotion ? 0 : 0.35 }}
-                className="flex w-full flex-wrap items-center justify-center gap-x-6 gap-y-6 sm:gap-x-10 sm:gap-y-8 lg:gap-x-14"
-              >
-                {LOGO_SETS[visibleSet].map((logo, index) => (
-                  <LogoItem
-                    key={logo.name}
-                    logo={logo}
-                    index={index}
-                    reduceMotion={!!shouldReduceMotion}
-                    easeOut={EASE_OUT}
-                    easeIn={EASE_IN}
-                  />
-                ))}
-              </motion.div>
-            </AnimatePresence>
-          </div>
-        </div>
-
-        {/* Dot indicators */}
-        {!shouldReduceMotion && LOGO_SETS.length > 1 && (
-          <div
-            aria-label={`Logo group ${activeSet + 1} of ${LOGO_SETS.length}`}
-            className="mt-5 flex justify-center gap-1.5"
-          >
-            {LOGO_SETS.map((_, i) => (
-              <span
-                key={i}
-                aria-hidden="true"
-                className={`h-1 rounded-full transition-all duration-300 ${
-                  activeSet === i ? "w-5 bg-white" : "w-1 bg-white/25"
-                }`}
-              />
-            ))}
-          </div>
-        )}
-      </div>
-    </section>
+      {error ? (
+        <span className="text-xs font-medium text-[#5a6270]">{logo.name}</span>
+      ) : (
+        <>
+          <Image
+            src={logo.src}
+            alt={logo.name}
+            width={20}
+            height={20}
+            className="h-5 w-5 object-contain grayscale invert brightness-[0.6]"
+            onError={() => setError(true)}
+          />
+          <span className="text-[13px] font-medium text-[#5a6270]">
+            {logo.name}
+          </span>
+        </>
+      )}
+    </div>
   );
 }
 
-type LogoItemProps = {
-  logo: Logo;
-  index: number;
-  reduceMotion: boolean;
-  easeOut: [number, number, number, number];
-  easeIn:  [number, number, number, number];
-};
-
-function LogoItem({ logo, index, reduceMotion, easeOut, easeIn }: LogoItemProps) {
-  const [hasError, setHasError] = useState(false);
+/* ─── One marquee row ───────────────────── */
+function MarqueeRow({
+  logos,
+  direction = "left",
+  speed = 40,
+  paused,
+}: {
+  logos: Logo[];
+  direction?: "left" | "right";
+  speed?: number;
+  paused: boolean;
+}) {
+  const animName = direction === "left" ? "marquee-left" : "marquee-right";
 
   return (
-    <motion.div
-      initial={reduceMotion ? undefined : { opacity: 0, y: 24, filter: "blur(8px)" }}
-      animate={
-        reduceMotion
-          ? { opacity: 0.55 }
-          : {
-              opacity: 0.55,
-              y: 0,
-              filter: "blur(0px)",
-              transition: { delay: index * 0.1, duration: 0.5, ease: easeOut },
-            }
-      }
-      exit={
-        reduceMotion
-          ? undefined
-          : {
-              opacity: 0,
-              y: -24,
-              filter: "blur(8px)",
-              transition: { duration: 0.3, ease: easeIn },
-            }
-      }
-      whileHover={reduceMotion ? undefined : { opacity: 1, scale: 1.04 }}
-      className="flex h-8 min-w-[80px] items-center justify-center sm:h-9 sm:min-w-[100px] lg:h-10 lg:min-w-[110px]"
+    <div className="relative overflow-hidden">
+      <div
+        className="flex gap-3"
+        style={{
+          width: "max-content",
+          animation: `${animName} ${speed}s linear infinite`,
+          animationPlayState: paused ? "paused" : "running",
+          willChange: "transform",
+        }}
+      >
+        {logos.map((logo, i) => (
+          <LogoPill key={`a-${i}`} logo={logo} />
+        ))}
+        {logos.map((logo, i) => (
+          <LogoPill key={`b-${i}`} logo={logo} />
+        ))}
+      </div>
+
+      {/* Left fade */}
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-y-0 left-0 w-24 sm:w-40 lg:w-56"
+        style={{ background: "linear-gradient(to right, #000 0%, transparent 100%)" }}
+      />
+      {/* Right fade */}
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-y-0 right-0 w-24 sm:w-40 lg:w-56"
+        style={{ background: "linear-gradient(to left, #000 0%, transparent 100%)" }}
+      />
+    </div>
+  );
+}
+
+/* ─── Main export ────────────────────────── */
+export default function LogoCloud() {
+  const shouldReduceMotion = useReducedMotion();
+  const [hovered, setHovered]   = useState(false);
+
+  const paused = !!shouldReduceMotion || hovered;
+
+  return (
+    <section
+      aria-labelledby="lc-heading"
+      className="w-full overflow-hidden bg-black py-20 sm:py-24 lg:py-32"
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
     >
-      {hasError ? (
-        <span className="max-w-full truncate text-xs font-medium text-zinc-600 transition-colors hover:text-zinc-400 sm:text-sm">
-          {logo.name}
-        </span>
-      ) : (
-        <Image
-          src={logo.src}
-          alt={logo.name}
-          width={110}
-          height={32}
-          sizes="(max-width: 640px) 80px, (max-width: 1024px) 100px, 110px"
-          className="h-auto max-h-6 w-auto max-w-[90px] object-contain grayscale invert opacity-70 transition-opacity duration-200 hover:opacity-100 sm:max-h-7 sm:max-w-[110px]"
-          onError={() => setHasError(true)}
-        />
-      )}
-    </motion.div>
+      {/* Header */}
+      <div className="mx-auto mb-12 max-w-xl px-4 text-center sm:mb-16">
+        <p className="mb-4 font-mono text-[10px] font-medium uppercase tracking-[0.25em] text-[#5a6270]">
+          Integrations
+        </p>
+        <h2
+          id="lc-heading"
+          className="text-2xl font-bold tracking-[-0.03em] text-white sm:text-3xl lg:text-4xl"
+        >
+          Works with tools{" "}
+          <span className="text-[#5a6270]">you already use.</span>
+        </h2>
+        <p className="mt-4 text-sm leading-relaxed text-[#5a6270]">
+          Life OS connects your workflow without making you start over.
+        </p>
+      </div>
+
+      {/* Marquee rows */}
+      <div className="flex flex-col gap-3">
+        <MarqueeRow logos={TRACK_A} direction="left"  speed={40} paused={paused} />
+        <MarqueeRow logos={TRACK_B} direction="right" speed={52} paused={paused} />
+      </div>
+
+      {/* Subtle caption */}
+      <p className="mt-10 text-center font-mono text-[10px] uppercase tracking-[0.2em] text-[#222]">
+        Hover to pause
+      </p>
+    </section>
   );
 }
