@@ -2,10 +2,14 @@
 
 @import "tailwindcss";
 
-*, *::before, *::after {
-  box-sizing: border-box;
-  margin: 0;
-  padding: 0;
+/* Must live in @layer base: an unlayered reset beats every Tailwind v4
+   utility (p-*, m-*, space-*, ...) because utilities are layered. */
+@layer base {
+  *, *::before, *::after {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+  }
 }
 
 /* ══════════════════════════════════════════
